@@ -1,0 +1,10 @@
+{
+  "name": "Lista de mercado",
+  "short_name": "Mercado",
+  "description": "Suas listas de compras",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#e9ecf5",
+  "theme_color": "#4f46e5",
+  "lang": "pt-BR"
+}

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Lista Mercado</string>
+    <string name="title_activity_main">Lista Mercado</string>
+    <string name="package_name">com.listmarket.app</string>
+    <string name="custom_url_scheme">com.listmarket.app</string>
+</resources>

@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #0f172a;
+  --muted: #64748b;
+  --background: #e9ecf5;
+  --elevated: #ffffff;
+  --surface: rgba(255, 255, 255, 0.78);
+  --border-default: rgba(15, 23, 42, 0.09);
+  --border-strong: rgba(15, 23, 42, 0.14);
+  --input-fill: #f1f5f9;
+  --placeholder: rgba(15, 23, 42, 0.4);
+  --accent: #4f46e5;
+  --accent-ring: rgba(79, 70, 229, 0.28);
+  --accent-subtle: rgba(79, 70, 229, 0.1);
+  --on-accent: #ffffff;
+  --ghost-hover: rgba(15, 23, 42, 0.05);
+  --danger-hover: rgba(220, 38, 38, 0.08);
+  --line-faint: rgba(15, 23, 42, 0.22);
+  --shadow-card: 0 1px 0 rgba(15, 23, 42, 0.04), 0 14px 40px -18px rgba(15, 23, 42, 0.14);
+  --shadow-login: 0 24px 64px -24px rgba(15, 23, 42, 0.2);
+  --foreground: var(--ink);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-app);
+  --font-display: var(--font-app);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-app), system-ui, sans-serif;
+  min-height: 100%;
+  letter-spacing: -0.01em;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 100% 80% at 0% 0%, rgba(79, 70, 229, 0.11), transparent 58%),
+    radial-gradient(ellipse 80% 60% at 100% 0%, rgba(14, 165, 233, 0.09), transparent 52%),
+    radial-gradient(ellipse 70% 50% at 50% 100%, rgba(99, 102, 241, 0.07), transparent 48%);
+}
+
+.font-display {
+  letter-spacing: -0.03em;
+}
