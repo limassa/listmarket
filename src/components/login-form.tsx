@@ -38,7 +38,7 @@ export function LoginForm() {
       return;
     }
     setStatus("sent");
-    setMensagem("Enviamos um link mágico para seu e-mail. Abra a caixa de entrada.");
+    setMensagem("Enviamos um link para seu e-mail. Abra a caixa de entrada.");
   }
 
   async function entrarComGoogle() {
@@ -141,7 +141,7 @@ export function LoginForm() {
             ) : status === "sent" ? (
               "Link enviado"
             ) : (
-              "Receber link mágico"
+              "Receber link"
             )}
           </button>
         </form>
