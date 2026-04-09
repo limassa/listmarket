@@ -1,3 +1,5 @@
+import { jsPDF } from "jspdf";
+
 export type ItemExport = {
   nome: string;
   quantidade: number;
@@ -5,7 +7,7 @@ export type ItemExport = {
   concluido: boolean;
 };
 
-function formatarData(iso: string) {
+export function formatarDataExportacao(iso: string) {
   try {
     return new Intl.DateTimeFormat("pt-BR", {
       dateStyle: "short",
@@ -23,7 +25,7 @@ export function montarTextoPlano(
 ): string {
   const linhas = [
     `Lista de mercado: ${tituloLista}`,
-    `Atualizada em: ${formatarData(atualizadaEm)}`,
+    `Atualizada em: ${formatarDataExportacao(atualizadaEm)}`,
     "",
     "Itens (funciona offline — abra este ficheiro no telemóvel):",
     "",
@@ -92,14 +94,59 @@ export function montarHtmlOffline(
 </head>
 <body>
   <h1>${esc(tituloLista)}</h1>
-  <p class="meta">Atualizada em ${esc(formatarData(atualizadaEm))}</p>
+  <p class="meta">Atualizada em ${esc(formatarDataExportacao(atualizadaEm))}</p>
   ${itensHtml}
   <footer>Lista de mercado — ficheiro para ver sem internet.</footer>
 </body>
 </html>`;
 }
 
-export function nomeArquivoSeguro(nomeLista: string, ext: "txt" | "html") {
+export function montarPdfBlob(
+  tituloLista: string,
+  atualizadaEm: string,
+  itens: ItemExport[]
+): Blob {
+  const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
+  const pageW = doc.internal.pageSize.getWidth();
+  let y = 16;
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  const titleLines = doc.splitTextToSize(tituloLista, pageW - 28);
+  doc.text(titleLines, 14, y);
+  y += titleLines.length * 7 + 6;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(90, 90, 90);
+  doc.text(`Atualizada em: ${formatarDataExportacao(atualizadaEm)}`, 14, y);
+  y += 10;
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(11);
+  if (itens.length === 0) {
+    doc.text("(lista vazia)", 14, y);
+  } else {
+    for (const i of itens) {
+      const marca = i.concluido ? "[x]" : "[ ]";
+      const line = `${marca} ${i.quantidade} ${i.unidade} — ${i.nome}`;
+      const lines = doc.splitTextToSize(line, pageW - 28);
+      if (y > 275) {
+        doc.addPage();
+        y = 16;
+      }
+      doc.text(lines, 14, y);
+      y += lines.length * 5.5 + 2;
+    }
+  }
+  y = Math.min(y + 12, 285);
+  doc.setFontSize(8);
+  doc.setTextColor(140, 140, 140);
+  doc.text("Lista de mercado — PDF para partilhar (offline).", 14, y);
+  return doc.output("blob");
+}
+
+export function nomeArquivoSeguro(
+  nomeLista: string,
+  ext: "txt" | "html" | "pdf"
+) {
   const base = nomeLista
     .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "")
     .replace(/\s+/g, "-")

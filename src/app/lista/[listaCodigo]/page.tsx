@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/app-header";
-import { ListaExportar } from "@/components/lista-exportar";
 import { ListaItens, type ItemLinha } from "@/components/lista-itens";
+import { ListaPartilharBotao } from "@/components/lista-partilhar-botao";
 import { ListaTituloEditavel } from "@/components/lista-titulo-editavel";
 import { ArrowLeft, ClipboardList } from "lucide-react";
 import Link from "next/link";
@@ -67,7 +67,7 @@ export default async function ListaDetalhePage({ params }: Props) {
           Voltar às listas
         </Link>
 
-        <div className="mb-8 flex items-start gap-4">
+        <div className="mb-8 flex items-start gap-3">
           <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] ring-1 ring-[var(--accent)]/25 shadow-sm">
             <ClipboardList className="h-7 w-7" strokeWidth={1.75} />
           </span>
@@ -80,13 +80,13 @@ export default async function ListaDetalhePage({ params }: Props) {
               Toque no quadrado para marcar o que já pegou.
             </p>
           </div>
+          <ListaPartilharBotao
+            listaCodigo={lista.Lista_codigo}
+            listaNome={lista.Lista_nome}
+            listaAtualizadaEm={lista.Lista_atualizadaEm}
+            variant="toolbar"
+          />
         </div>
-
-        <ListaExportar
-          listaCodigo={lista.Lista_codigo}
-          listaNome={lista.Lista_nome}
-          listaAtualizadaEm={lista.Lista_atualizadaEm}
-        />
 
         <ListaItens listaCodigo={lista.Lista_codigo} itensIniciais={itens} />
       </main>

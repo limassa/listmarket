@@ -4,6 +4,7 @@ import {
   LISTAS_RECENTES_PARA_SUGESTAO,
   MAX_ITENS_SUGERIDOS_NA_NOVA_LISTA,
 } from "@/lib/lista-sugestoes";
+import { normalizarUnidade } from "@/lib/unidades";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -202,7 +203,7 @@ export async function adicionarItem(formData: FormData) {
   const nome = String(formData.get("nome") ?? "").trim();
   const q = String(formData.get("quantidade") ?? "1").replace(",", ".");
   const quantidade = Number.parseFloat(q) || 1;
-  const unidade = String(formData.get("unidade") ?? "un").trim() || "un";
+  const unidade = normalizarUnidade(String(formData.get("unidade") ?? "un"));
 
   if (!listaCodigo || !nome) return { erro: "Dados incompletos." };
 
@@ -273,7 +274,7 @@ export async function atualizarListaItem(
   const n = nome.trim();
   const q = quantidadeStr.replace(",", ".");
   const quantidade = Number.parseFloat(q) || 1;
-  const u = unidade.trim() || "un";
+  const u = normalizarUnidade(unidade);
 
   if (!n) return { erro: "Informe o nome do item." };
 

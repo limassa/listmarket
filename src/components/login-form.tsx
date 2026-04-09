@@ -1,20 +1,30 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { publicAppOriginFromWindow } from "@/lib/public-origin";
 import {
+  KeyRound,
   Loader2,
+  LogIn,
   Mail,
   Sparkles,
   ShoppingBasket,
+  UserPlus,
 } from "lucide-react";
-import { publicAppOriginFromWindow } from "@/lib/public-origin";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
+const LIZ_SITE = "https://lizsoftware.com.br";
+
 export function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const erroUrl = searchParams.get("erro");
   const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "sent">("idle");
   const [mensagem, setMensagem] = useState<string | null>(
     erroUrl === "auth"
@@ -54,6 +64,48 @@ export function LoginForm() {
       setMensagem(error.message);
       setStatus("idle");
     }
+  }
+
+  async function entrarComSenha(e: React.FormEvent) {
+    e.preventDefault();
+    setMensagem(null);
+    setStatus("loading");
+    const supabase = createClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password: senha,
+    });
+    setStatus("idle");
+    if (error) {
+      setMensagem(error.message);
+      return;
+    }
+    router.replace("/");
+    router.refresh();
+  }
+
+  async function criarConta() {
+    setMensagem(null);
+    if (senha.length < 6) {
+      setMensagem("A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+    setStatus("loading");
+    const supabase = createClient();
+    const origin = publicAppOriginFromWindow();
+    const { error } = await supabase.auth.signUp({
+      email: email.trim(),
+      password: senha,
+      options: { emailRedirectTo: `${origin}/auth/callback` },
+    });
+    setStatus("idle");
+    if (error) {
+      setMensagem(error.message);
+      return;
+    }
+    setMensagem(
+      "Conta criada. Se o projeto exigir confirmação por e-mail, abra a mensagem enviada. Caso contrário, já pode entrar com e-mail e senha."
+    );
   }
 
   return (
@@ -108,16 +160,21 @@ export function LoginForm() {
           )}
           Continuar com Google
         </button>
+        <p className="mt-2 text-center text-[11px] leading-snug text-[var(--muted)]">
+          No aplicativo Android o Google pode abrir o navegador externo. Para ficar
+          dentro do app, use <strong className="text-[var(--ink)]">e-mail e senha</strong>{" "}
+          abaixo.
+        </p>
 
         <div className="my-6 flex items-center gap-3">
           <span className="h-px flex-1 bg-[var(--border-default)]" />
-          <span className="text-xs text-[var(--muted)]">ou e-mail</span>
+          <span className="text-xs text-[var(--muted)]">e-mail e senha</span>
           <span className="h-px flex-1 bg-[var(--border-default)]" />
         </div>
 
-        <form onSubmit={enviarLink} className="space-y-4">
+        <form onSubmit={entrarComSenha} className="mb-4 space-y-3">
           <label className="block">
-            <span className="mb-2 flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
+            <span className="mb-1.5 flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
               <Mail className="h-3.5 w-3.5" />
               E-mail
             </span>
@@ -131,10 +188,60 @@ export function LoginForm() {
               className="w-full rounded-2xl border border-[var(--border-default)] bg-[var(--input-fill)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--placeholder)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-ring)]"
             />
           </label>
+          <label className="block">
+            <span className="mb-1.5 flex items-center gap-2 text-xs font-medium text-[var(--muted)]">
+              <KeyRound className="h-3.5 w-3.5" />
+              Senha
+            </span>
+            <input
+              type="password"
+              required
+              autoComplete="current-password"
+              value={senha}
+              onChange={(e) => setSenha(e.target.value)}
+              placeholder="••••••••"
+              minLength={6}
+              className="w-full rounded-2xl border border-[var(--border-default)] bg-[var(--input-fill)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--placeholder)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-ring)]"
+            />
+          </label>
           <button
             type="submit"
-            disabled={status === "loading" || status === "sent"}
+            disabled={status === "loading"}
             className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--accent)] py-3.5 text-sm font-semibold text-[var(--on-accent)] transition hover:opacity-95 disabled:opacity-60"
+          >
+            {status === "loading" ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <LogIn className="h-5 w-5" />
+            )}
+            Entrar
+          </button>
+        </form>
+
+        <button
+          type="button"
+          onClick={() => void criarConta()}
+          disabled={status === "loading" || !email.trim() || senha.length < 6}
+          className="mb-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--border-default)] bg-[var(--elevated)] py-3 text-sm font-medium text-[var(--ink)] transition hover:bg-[var(--ghost-hover)] disabled:opacity-50"
+        >
+          <UserPlus className="h-4 w-4" />
+          Criar conta
+        </button>
+
+        <div className="my-6 flex items-center gap-3">
+          <span className="h-px flex-1 bg-[var(--border-default)]" />
+          <span className="text-xs text-[var(--muted)]">ou link no e-mail</span>
+          <span className="h-px flex-1 bg-[var(--border-default)]" />
+        </div>
+
+        <form onSubmit={enviarLink} className="space-y-4">
+          <p className="text-xs text-[var(--muted)]">
+            Sem senha: enviamos um link de acesso para o seu e-mail.
+          </p>
+          <button
+            type="submit"
+            disabled={status === "loading" || status === "sent" || !email.trim()}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--border-strong)] bg-[var(--input-fill)] py-3.5 text-sm font-semibold text-[var(--ink)] transition hover:bg-[var(--ghost-hover)] disabled:opacity-60"
           >
             {status === "loading" ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -149,12 +256,36 @@ export function LoginForm() {
         {mensagem ? (
           <p
             className={`mt-4 text-center text-sm ${
-              status === "sent" ? "text-emerald-700" : "text-amber-800"
+              status === "sent" || mensagem.startsWith("Conta criada")
+                ? "text-emerald-700"
+                : "text-amber-800"
             }`}
           >
             {mensagem}
           </p>
         ) : null}
+      </div>
+
+      <div className="flex flex-col items-center gap-2 pb-4 text-center">
+        <p className="text-[11px] text-[var(--muted)]">Desenvolvido por</p>
+        <Link
+          href={LIZ_SITE}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-xl px-2 py-1 transition hover:opacity-90"
+          aria-label="Liz Software — abrir site"
+        >
+          <Image
+            src="/liz-software-icon.svg"
+            alt="Liz Software"
+            width={36}
+            height={36}
+            className="h-9 w-9 rounded-lg shadow-sm"
+          />
+          <span className="text-xs font-semibold text-[var(--ink)]">
+            Liz Software
+          </span>
+        </Link>
       </div>
     </div>
   );

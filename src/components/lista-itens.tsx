@@ -6,6 +6,7 @@ import {
   atualizarListaItem,
   excluirItem,
 } from "@/app/actions/listas";
+import { UNIDADES_MEDIDA } from "@/lib/unidades";
 import { Check, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -23,9 +24,14 @@ type Props = {
   itensIniciais: ItemLinha[];
 };
 
+const selectUnClass =
+  "w-full rounded-xl border border-[var(--border-default)] bg-[var(--elevated)] px-2 py-2 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-ring)] sm:w-28";
+
 export function ListaItens({ listaCodigo, itensIniciais }: Props) {
   const router = useRouter();
   const [pendente, startTransition] = useTransition();
+  const [adicionando, setAdicionando] = useState(false);
+  const [erroAdicionar, setErroAdicionar] = useState<string | null>(null);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [draftNome, setDraftNome] = useState("");
   const [draftQtd, setDraftQtd] = useState("");
@@ -48,13 +54,24 @@ export function ListaItens({ listaCodigo, itensIniciais }: Props) {
 
   async function onAdd(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    const fd = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const fd = new FormData(form);
     fd.set("listaCodigo", listaCodigo);
-    startTransition(async () => {
-      await adicionarItem(fd);
-      e.currentTarget.reset();
+    setErroAdicionar(null);
+    setAdicionando(true);
+    try {
+      const r = await adicionarItem(fd);
+      if (r && "erro" in r && r.erro) {
+        setErroAdicionar(r.erro);
+        return;
+      }
+      form.reset();
+      const un = form.elements.namedItem("unidade") as HTMLSelectElement | null;
+      if (un) un.value = "un";
       router.refresh();
-    });
+    } finally {
+      setAdicionando(false);
+    }
   }
 
   const ordenados = [...itensIniciais].sort(
@@ -66,7 +83,11 @@ export function ListaItens({ listaCodigo, itensIniciais }: Props) {
     setEditandoId(item.ListaItem_codigo);
     setDraftNome(item.ListaItem_nome);
     setDraftQtd(String(item.ListaItem_quantidade));
-    setDraftUn(item.ListaItem_unidade);
+    setDraftUn(
+      UNIDADES_MEDIDA.some((u) => u.value === item.ListaItem_unidade)
+        ? item.ListaItem_unidade
+        : "un"
+    );
   }
 
   function fecharEdicao() {
@@ -98,7 +119,7 @@ export function ListaItens({ listaCodigo, itensIniciais }: Props) {
   return (
     <div className="space-y-6">
       <form
-        onSubmit={onAdd}
+        onSubmit={(e) => void onAdd(e)}
         className="flex flex-col gap-2 rounded-2xl border border-dashed border-[var(--border-strong)] bg-[var(--input-fill)]/80 p-4 sm:flex-row sm:flex-wrap sm:items-end"
       >
         <input type="hidden" name="listaCodigo" value={listaCodigo} />
@@ -124,22 +145,30 @@ export function ListaItens({ listaCodigo, itensIniciais }: Props) {
           </div>
           <div>
             <label className="mb-1 block text-xs text-[var(--muted)]">Unid.</label>
-            <input
-              name="unidade"
-              defaultValue="un"
-              placeholder="un"
-              className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--elevated)] px-3 py-2 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-ring)] sm:w-24"
-            />
+            <select name="unidade" defaultValue="un" className={selectUnClass}>
+              {UNIDADES_MEDIDA.map((u) => (
+                <option key={u.value} value={u.value}>
+                  {u.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
         <button
           type="submit"
-          disabled={pendente}
+          disabled={adicionando || pendente}
           className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--on-accent)] hover:opacity-95 disabled:opacity-60 sm:shrink-0"
         >
-          {pendente ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          {adicionando ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Check className="h-4 w-4" />
+          )}
           Adicionar
         </button>
+        {erroAdicionar ? (
+          <p className="basis-full text-xs text-amber-800 sm:order-last">{erroAdicionar}</p>
+        ) : null}
       </form>
 
       <ul className="space-y-2">
@@ -175,11 +204,17 @@ export function ListaItens({ listaCodigo, itensIniciais }: Props) {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs text-[var(--muted)]">Unid.</label>
-                    <input
+                    <select
                       value={draftUn}
                       onChange={(e) => setDraftUn(e.target.value)}
-                      className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--elevated)] px-3 py-2 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-ring)] sm:w-24"
-                    />
+                      className={selectUnClass}
+                    >
+                      {UNIDADES_MEDIDA.map((u) => (
+                        <option key={u.value} value={u.value}>
+                          {u.label}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
                 <div className="flex gap-2 sm:shrink-0">

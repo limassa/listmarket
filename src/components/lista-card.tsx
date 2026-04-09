@@ -1,6 +1,7 @@
 "use client";
 
 import { excluirLista, renomearLista } from "@/app/actions/listas";
+import { ListaPartilharBotao } from "@/components/lista-partilhar-botao";
 import { Check, ClipboardList, Loader2, Pencil, Trash2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -89,6 +90,12 @@ export function ListaCard({ codigo, nome, atualizadaEm, totalItens }: Props) {
             </span>
           </Link>
           <div className="flex shrink-0 items-center gap-1 self-center">
+            <ListaPartilharBotao
+              listaCodigo={codigo}
+              listaNome={nome}
+              listaAtualizadaEm={atualizadaEm}
+              variant="ghost"
+            />
             <button
               type="button"
               onClick={() => {
