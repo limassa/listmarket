@@ -101,45 +101,158 @@ export function montarHtmlOffline(
 </html>`;
 }
 
-export function montarPdfBlob(
+const PDF_FOOTER_RESERVE_MM = 22;
+
+/** Rasteriza imagem (SVG/PNG) para PNG em data URL — só no browser (PDF com logos). */
+async function assetToPngDataUrl(
+  publicPath: string,
+  targetWidthPx: number
+): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  const src = new URL(publicPath, window.location.origin).href;
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const w = targetWidthPx;
+        const h = Math.max(
+          1,
+          Math.round((img.naturalHeight / img.naturalWidth) * targetWidthPx)
+        );
+        const c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        const ctx = c.getContext("2d");
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(c.toDataURL("image/png"));
+      } catch {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+function desenharRodapeEmpresa(
+  doc: InstanceType<typeof jsPDF>,
+  pageW: number,
+  pageH: number,
+  lizPng: string | null
+) {
+  const footerTextY = pageH - 4;
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(100, 100, 100);
+  if (lizPng) {
+    const lw = 7.5;
+    const lh = 7.5;
+    doc.addImage(
+      lizPng,
+      "PNG",
+      (pageW - lw) / 2,
+      footerTextY - lh - 3,
+      lw,
+      lh
+    );
+  }
+  doc.text("Desenvolvido por Liz Software", pageW / 2, footerTextY, {
+    align: "center",
+  });
+}
+
+export async function montarPdfBlob(
   tituloLista: string,
   atualizadaEm: string,
   itens: ItemExport[]
-): Blob {
+): Promise<Blob> {
+  const [appPng, lizPng] =
+    typeof window !== "undefined"
+      ? await Promise.all([
+          assetToPngDataUrl("/lista-mercado-app-logo.svg", 280),
+          assetToPngDataUrl("/liz-software-icon.svg", 160),
+        ])
+      : [null, null];
+
   const doc = new jsPDF({ unit: "mm", format: "a4", compress: true });
   const pageW = doc.internal.pageSize.getWidth();
-  let y = 16;
-  doc.setFontSize(18);
+  const pageH = doc.internal.pageSize.getHeight();
+  const marginX = 14;
+  const contentMaxY = pageH - PDF_FOOTER_RESERVE_MM;
+  let y = 10;
+
+  if (appPng) {
+    const logoMm = 26;
+    doc.addImage(appPng, "PNG", (pageW - logoMm) / 2, y, logoMm, logoMm);
+    y += logoMm + 6;
+  } else {
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(79, 70, 229);
+    doc.text("Lista Mercado", pageW / 2, y + 4, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+    y += 10;
+  }
+
+  doc.setFontSize(15);
   doc.setFont("helvetica", "bold");
   const titleLines = doc.splitTextToSize(tituloLista, pageW - 28);
-  doc.text(titleLines, 14, y);
-  y += titleLines.length * 7 + 6;
+  for (const line of titleLines) {
+    if (y > contentMaxY - 8) {
+      doc.addPage();
+      y = 14;
+    }
+    doc.text(line, pageW / 2, y, { align: "center" });
+    y += 7;
+  }
+  y += 2;
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(90, 90, 90);
-  doc.text(`Atualizada em: ${formatarDataExportacao(atualizadaEm)}`, 14, y);
+  if (y > contentMaxY - 6) {
+    doc.addPage();
+    y = 14;
+  }
+  doc.text(`Atualizada em: ${formatarDataExportacao(atualizadaEm)}`, pageW / 2, y, {
+    align: "center",
+  });
   y += 10;
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(11);
+
   if (itens.length === 0) {
-    doc.text("(lista vazia)", 14, y);
+    if (y > contentMaxY - 8) {
+      doc.addPage();
+      y = 14;
+    }
+    doc.text("(lista vazia)", marginX, y);
   } else {
-    for (const i of itens) {
-      const marca = i.concluido ? "[x]" : "[ ]";
-      const line = `${marca} ${i.quantidade} ${i.unidade} — ${i.nome}`;
+    for (const item of itens) {
+      const marca = item.concluido ? "[x]" : "[ ]";
+      const line = `${marca} ${item.quantidade} ${item.unidade} — ${item.nome}`;
       const lines = doc.splitTextToSize(line, pageW - 28);
-      if (y > 275) {
+      const blockH = lines.length * 5.5 + 2;
+      if (y + blockH > contentMaxY) {
         doc.addPage();
-        y = 16;
+        y = 14;
       }
-      doc.text(lines, 14, y);
-      y += lines.length * 5.5 + 2;
+      doc.text(lines, marginX, y);
+      y += blockH;
     }
   }
-  y = Math.min(y + 12, 285);
-  doc.setFontSize(8);
-  doc.setTextColor(140, 140, 140);
-  doc.text("Lista de mercado — PDF para partilhar (offline).", 14, y);
+
+  const total = doc.getNumberOfPages();
+  for (let p = 1; p <= total; p++) {
+    doc.setPage(p);
+    desenharRodapeEmpresa(doc, pageW, pageH, lizPng);
+  }
+
   return doc.output("blob");
 }
 

@@ -61,7 +61,7 @@ export function ListaPartilharBotao({
     setCarregando(true);
     try {
       const itens = await buscarItensExport(listaCodigo);
-      const blob = montarPdfBlob(listaNome, listaAtualizadaEm, itens);
+      const blob = await montarPdfBlob(listaNome, listaAtualizadaEm, itens);
       const nomePdf = nomeArquivoSeguro(listaNome, "pdf");
       const file = new File([blob], nomePdf, { type: "application/pdf" });
 

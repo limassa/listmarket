@@ -11,6 +11,7 @@
     "lint": "eslint",
     "cap:sync": "npx cap sync android",
     "cap:open": "npx cap open android",
+    "android:icons": "node scripts/generate-android-icons.mjs",
     "android:apk": "cd android && .\\gradlew.bat clean assembleDebug"
   },
   "dependencies": {

@@ -8,7 +8,6 @@ import {
   LogIn,
   Mail,
   Sparkles,
-  ShoppingBasket,
   UserPlus,
 } from "lucide-react";
 import Image from "next/image";
@@ -63,7 +62,10 @@ export function LoginForm() {
     if (error) {
       setMensagem(error.message);
       setStatus("idle");
+      return;
     }
+    // No Android o fluxo pode abrir o Chrome e voltar ao app sem redirect: evita botões presos em "loading".
+    window.setTimeout(() => setStatus("idle"), 4000);
   }
 
   async function entrarComSenha(e: React.FormEvent) {
@@ -111,9 +113,14 @@ export function LoginForm() {
   return (
     <div className="relative w-full max-w-md space-y-8">
       <div className="flex flex-col items-center gap-3 text-center">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[var(--accent-subtle)] text-[var(--accent)] ring-1 ring-[var(--accent)]/25">
-          <ShoppingBasket className="h-8 w-8" strokeWidth={1.75} />
-        </div>
+        <Image
+          src="/lista-mercado-app-logo.svg"
+          alt=""
+          width={72}
+          height={72}
+          className="h-16 w-16 rounded-2xl shadow-[var(--shadow-card)] ring-1 ring-[var(--border-default)]"
+          priority
+        />
         <div>
           <h1 className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)]">
             Lista de mercado
@@ -161,9 +168,10 @@ export function LoginForm() {
           Continuar com Google
         </button>
         <p className="mt-2 text-center text-[11px] leading-snug text-[var(--muted)]">
-          No aplicativo Android o Google pode abrir o navegador externo. Para ficar
-          dentro do app, use <strong className="text-[var(--ink)]">e-mail e senha</strong>{" "}
-          abaixo.
+          No Android, o login com Google costuma abrir o{" "}
+          <strong className="text-[var(--ink)]">Chrome/navegador</strong> por política de
+          segurança — não é falha do app. Para tudo dentro do app, use{" "}
+          <strong className="text-[var(--ink)]">e-mail e senha</strong> abaixo.
         </p>
 
         <div className="my-6 flex items-center gap-3">
@@ -203,6 +211,9 @@ export function LoginForm() {
               minLength={6}
               className="w-full rounded-2xl border border-[var(--border-default)] bg-[var(--input-fill)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--placeholder)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-ring)]"
             />
+            <span className="mt-1 block text-[11px] text-[var(--muted)]">
+              Mínimo 6 caracteres (também para criar conta).
+            </span>
           </label>
           <button
             type="submit"
@@ -221,7 +232,7 @@ export function LoginForm() {
         <button
           type="button"
           onClick={() => void criarConta()}
-          disabled={status === "loading" || !email.trim() || senha.length < 6}
+          disabled={status === "loading" || !email.trim()}
           className="mb-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--border-default)] bg-[var(--elevated)] py-3 text-sm font-medium text-[var(--ink)] transition hover:bg-[var(--ghost-hover)] disabled:opacity-50"
         >
           <UserPlus className="h-4 w-4" />

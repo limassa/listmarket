@@ -14,6 +14,10 @@ export const metadata: Metadata = {
   description: "Listas de compras claras, rápidas e no seu ritmo.",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, title: "Mercado" },
+  icons: {
+    icon: [{ url: "/lista-mercado-app-logo.svg", type: "image/svg+xml" }],
+    apple: "/lista-mercado-app-logo.svg",
+  },
 };
 
 export const viewport: Viewport = {

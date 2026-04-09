@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Lista Mercado">
+  <defs>
+    <linearGradient id="lmGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="55%" style="stop-color:#4f46e5"/>
+      <stop offset="100%" style="stop-color:#4338ca"/>
+    </linearGradient>
+    <linearGradient id="lmShine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.22"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="28" fill="url(#lmGrad)"/>
+  <ellipse cx="60" cy="38" rx="44" ry="22" fill="url(#lmShine)"/>
+  <!-- basket -->
+  <path
+    d="M28 48h64l-8 52H36L28 48z"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="5"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M32 48V42a8 8 0 0 1 8-8h40a8 8 0 0 1 8 8v6"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="5"
+    stroke-linecap="round"
+  />
+  <!-- handle -->
+  <path
+    d="M44 38c0-10 8-18 16-18s16 8 16 18"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="4.5"
+    stroke-linecap="round"
+  />
+  <!-- checklist -->
+  <path
+    d="M48 62h24M48 74h18M48 86h20"
+    stroke="#c7d2fe"
+    stroke-width="3.5"
+    stroke-linecap="round"
+  />
+  <circle cx="78" cy="72" r="14" fill="#22c55e"/>
+  <path
+    d="M72 72l4 4 8-10"
+    fill="none"
+    stroke="#ffffff"
+    stroke-width="3.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>
