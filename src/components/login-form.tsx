@@ -7,6 +7,7 @@ import {
   Sparkles,
   ShoppingBasket,
 } from "lucide-react";
+import { publicAppOriginFromWindow } from "@/lib/public-origin";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
@@ -26,7 +27,7 @@ export function LoginForm() {
     setMensagem(null);
     setStatus("loading");
     const supabase = createClient();
-    const origin = window.location.origin;
+    const origin = publicAppOriginFromWindow();
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: { emailRedirectTo: `${origin}/auth/callback` },
@@ -44,7 +45,7 @@ export function LoginForm() {
     setMensagem(null);
     setStatus("loading");
     const supabase = createClient();
-    const origin = window.location.origin;
+    const origin = publicAppOriginFromWindow();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${origin}/auth/callback` },
