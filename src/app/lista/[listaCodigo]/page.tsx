@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { AppHeader } from "@/components/app-header";
+import { ListaExportar } from "@/components/lista-exportar";
 import { ListaItens, type ItemLinha } from "@/components/lista-itens";
 import { ListaTituloEditavel } from "@/components/lista-titulo-editavel";
 import { ArrowLeft, ClipboardList } from "lucide-react";
@@ -80,6 +81,12 @@ export default async function ListaDetalhePage({ params }: Props) {
             </p>
           </div>
         </div>
+
+        <ListaExportar
+          listaCodigo={lista.Lista_codigo}
+          listaNome={lista.Lista_nome}
+          listaAtualizadaEm={lista.Lista_atualizadaEm}
+        />
 
         <ListaItens listaCodigo={lista.Lista_codigo} itensIniciais={itens} />
       </main>
