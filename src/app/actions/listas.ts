@@ -243,7 +243,8 @@ export async function alternarItemConcluido(
   const { error } = await supabase
     .from("ListaItem")
     .update({ ListaItem_concluido: concluido })
-    .eq("ListaItem_codigo", itemCodigo);
+    .eq("ListaItem_codigo", itemCodigo)
+    .eq("ListaItem_listaCodigo", listaCodigo);
 
   if (error) return { erro: error.message };
   await marcarListaAtualizada(supabase, listaCodigo);

@@ -25,7 +25,7 @@ async function buscarItensExport(listaCodigo: string): Promise<ItemExport[]> {
     nome: r.ListaItem_nome,
     quantidade: Number(r.ListaItem_quantidade) || 1,
     unidade: r.ListaItem_unidade || "un",
-    concluido: r.ListaItem_concluido,
+    concluido: Boolean(r.ListaItem_concluido),
   }));
 }
 

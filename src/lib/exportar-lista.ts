@@ -233,16 +233,50 @@ export async function montarPdfBlob(
     }
     doc.text("(lista vazia)", marginX, y);
   } else {
+    const gapAposCheckbox = 5;
+    const colTexto = marginX + gapAposCheckbox + 3.2;
+    const larguraTexto = pageW - colTexto - marginX;
+
     for (const item of itens) {
-      const marca = item.concluido ? "[x]" : "[ ]";
-      const line = `${marca} ${item.quantidade} ${item.unidade} — ${item.nome}`;
-      const lines = doc.splitTextToSize(line, pageW - 28);
-      const blockH = lines.length * 5.5 + 2;
+      const textoItem = `${item.quantidade} ${item.unidade} — ${item.nome}`;
+      const lines = doc.splitTextToSize(textoItem, larguraTexto);
+      const blockH = Math.max(6, lines.length * 5.5 + 1.5);
+
       if (y + blockH > contentMaxY) {
         doc.addPage();
         y = 14;
       }
-      doc.text(lines, marginX, y);
+
+      const box = 3.2;
+      const boxTop = y - 3.2;
+      doc.setDrawColor(55, 55, 55);
+      doc.setLineWidth(0.2);
+      doc.rect(marginX, boxTop, box, box);
+      if (item.concluido) {
+        doc.setLineWidth(0.45);
+        doc.line(
+          marginX + 0.65,
+          boxTop + box * 0.52,
+          marginX + box * 0.42,
+          boxTop + box - 0.55
+        );
+        doc.line(
+          marginX + box * 0.42,
+          boxTop + box - 0.55,
+          marginX + box - 0.45,
+          boxTop + 0.55
+        );
+        doc.setLineWidth(0.2);
+      }
+
+      if (item.concluido) {
+        doc.setTextColor(95, 95, 95);
+      } else {
+        doc.setTextColor(0, 0, 0);
+      }
+      doc.text(lines, colTexto, y);
+      doc.setTextColor(0, 0, 0);
+
       y += blockH;
     }
   }

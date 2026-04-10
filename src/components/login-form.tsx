@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
+import { mensagemErroAutenticacao } from "@/lib/auth-mensagens";
 import { publicAppOriginFromWindow } from "@/lib/public-origin";
 import {
   KeyRound,
@@ -17,6 +18,10 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 const LIZ_SITE = "https://lizsoftware.com.br";
+
+function normalizarEmail(v: string) {
+  return v.trim().toLowerCase();
+}
 
 export function LoginForm() {
   const router = useRouter();
@@ -38,11 +43,11 @@ export function LoginForm() {
     const supabase = createClient();
     const origin = publicAppOriginFromWindow();
     const { error } = await supabase.auth.signInWithOtp({
-      email: email.trim(),
+      email: normalizarEmail(email),
       options: { emailRedirectTo: `${origin}/auth/callback` },
     });
     if (error) {
-      setMensagem(error.message);
+      setMensagem(mensagemErroAutenticacao(error.message));
       setStatus("idle");
       return;
     }
@@ -60,7 +65,7 @@ export function LoginForm() {
       options: { redirectTo: `${origin}/auth/callback` },
     });
     if (error) {
-      setMensagem(error.message);
+      setMensagem(mensagemErroAutenticacao(error.message));
       setStatus("idle");
       return;
     }
@@ -74,16 +79,39 @@ export function LoginForm() {
     setStatus("loading");
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: normalizarEmail(email),
       password: senha,
     });
     setStatus("idle");
     if (error) {
-      setMensagem(error.message);
+      setMensagem(mensagemErroAutenticacao(error.message));
       return;
     }
     router.replace("/");
     router.refresh();
+  }
+
+  async function enviarRedefinicaoSenha() {
+    const mail = normalizarEmail(email);
+    if (!mail) {
+      setMensagem("Informe o e-mail acima para receber o link de redefinição.");
+      return;
+    }
+    setMensagem(null);
+    setStatus("loading");
+    const supabase = createClient();
+    const origin = publicAppOriginFromWindow();
+    const { error } = await supabase.auth.resetPasswordForEmail(mail, {
+      redirectTo: `${origin}/auth/redefinir-senha`,
+    });
+    setStatus("idle");
+    if (error) {
+      setMensagem(mensagemErroAutenticacao(error.message));
+      return;
+    }
+    setMensagem(
+      "Se existir conta com este e-mail, enviamos instruções para redefinir a senha."
+    );
   }
 
   async function criarConta() {
@@ -96,13 +124,13 @@ export function LoginForm() {
     const supabase = createClient();
     const origin = publicAppOriginFromWindow();
     const { error } = await supabase.auth.signUp({
-      email: email.trim(),
+      email: normalizarEmail(email),
       password: senha,
       options: { emailRedirectTo: `${origin}/auth/callback` },
     });
     setStatus("idle");
     if (error) {
-      setMensagem(error.message);
+      setMensagem(mensagemErroAutenticacao(error.message));
       return;
     }
     setMensagem(
@@ -215,6 +243,16 @@ export function LoginForm() {
               Mínimo 6 caracteres (também para criar conta).
             </span>
           </label>
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => void enviarRedefinicaoSenha()}
+              disabled={status === "loading"}
+              className="text-xs font-medium text-[var(--accent)] hover:underline disabled:opacity-50"
+            >
+              Esqueci a senha
+            </button>
+          </div>
           <button
             type="submit"
             disabled={status === "loading"}
