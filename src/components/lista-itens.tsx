@@ -31,6 +31,11 @@ export function ListaItens({ listaCodigo, itensIniciais }: Props) {
   const router = useRouter();
   const [pendente, startTransition] = useTransition();
   const [adicionando, setAdicionando] = useState(false);
+  /** Operação em curso na lista — evita cliques duplos e mostra spinner no botão certo. */
+  const [acaoLista, setAcaoLista] = useState<{
+    id: string;
+    tipo: "toggle" | "remove";
+  } | null>(null);
   const [erroAdicionar, setErroAdicionar] = useState<string | null>(null);
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [draftNome, setDraftNome] = useState("");
@@ -39,17 +44,25 @@ export function ListaItens({ listaCodigo, itensIniciais }: Props) {
   const [erroEdicaoItem, setErroEdicaoItem] = useState<string | null>(null);
 
   async function onToggle(id: string, atual: boolean) {
-    startTransition(async () => {
+    if (acaoLista !== null || adicionando || pendente) return;
+    setAcaoLista({ id, tipo: "toggle" });
+    try {
       await alternarItemConcluido(listaCodigo, id, !atual);
       router.refresh();
-    });
+    } finally {
+      setAcaoLista(null);
+    }
   }
 
   async function onRemove(id: string) {
-    startTransition(async () => {
+    if (acaoLista !== null || adicionando || pendente) return;
+    setAcaoLista({ id, tipo: "remove" });
+    try {
       await excluirItem(listaCodigo, id);
       router.refresh();
-    });
+    } finally {
+      setAcaoLista(null);
+    }
   }
 
   async function onAdd(e: React.FormEvent<HTMLFormElement>) {
@@ -98,6 +111,7 @@ export function ListaItens({ listaCodigo, itensIniciais }: Props) {
   function salvarEdicao(itemCodigo: string) {
     const n = draftNome.trim();
     if (!n) return;
+    if (acaoLista !== null || adicionando) return;
     setErroEdicaoItem(null);
     startTransition(async () => {
       const r = await atualizarListaItem(
@@ -116,10 +130,13 @@ export function ListaItens({ listaCodigo, itensIniciais }: Props) {
     });
   }
 
+  const listaOcupada = adicionando || pendente || acaoLista !== null;
+
   return (
     <div className="space-y-6">
       <form
         onSubmit={(e) => void onAdd(e)}
+        aria-busy={adicionando}
         className="flex flex-col gap-2 rounded-2xl border border-dashed border-[var(--border-strong)] bg-[var(--input-fill)]/80 p-4 sm:flex-row sm:flex-wrap sm:items-end"
       >
         <input type="hidden" name="listaCodigo" value={listaCodigo} />
@@ -128,8 +145,9 @@ export function ListaItens({ listaCodigo, itensIniciais }: Props) {
           <input
             name="nome"
             required
+            disabled={adicionando}
             placeholder="Ex.: Leite integral"
-            className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--elevated)] px-3 py-2 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-ring)]"
+            className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--elevated)] px-3 py-2 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-ring)] disabled:cursor-not-allowed disabled:opacity-60"
           />
         </div>
         <div className="grid grid-cols-2 gap-2 sm:w-auto sm:grid-cols-none sm:flex sm:items-end">
@@ -140,12 +158,18 @@ export function ListaItens({ listaCodigo, itensIniciais }: Props) {
               type="text"
               inputMode="decimal"
               defaultValue="1"
-              className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--elevated)] px-3 py-2 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-ring)] sm:w-20"
+              disabled={adicionando}
+              className="w-full rounded-xl border border-[var(--border-default)] bg-[var(--elevated)] px-3 py-2 text-sm text-[var(--ink)] outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-ring)] disabled:cursor-not-allowed disabled:opacity-60 sm:w-20"
             />
           </div>
           <div>
             <label className="mb-1 block text-xs text-[var(--muted)]">Unid.</label>
-            <select name="unidade" defaultValue="un" className={selectUnClass}>
+            <select
+              name="unidade"
+              defaultValue="un"
+              disabled={adicionando}
+              className={`${selectUnClass} disabled:cursor-not-allowed disabled:opacity-60`}
+            >
               {UNIDADES_MEDIDA.map((u) => (
                 <option key={u.value} value={u.value}>
                   {u.label}
@@ -157,15 +181,24 @@ export function ListaItens({ listaCodigo, itensIniciais }: Props) {
         <button
           type="submit"
           disabled={adicionando || pendente}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--on-accent)] hover:opacity-95 disabled:opacity-60 sm:shrink-0"
+          className="inline-flex min-w-[9.5rem] items-center justify-center gap-2 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-semibold text-[var(--on-accent)] hover:opacity-95 disabled:opacity-60 sm:shrink-0"
         >
           {adicionando ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Check className="h-4 w-4" />
           )}
-          Adicionar
+          {adicionando ? "A adicionar…" : "Adicionar"}
         </button>
+        {adicionando ? (
+          <p
+            className="basis-full text-xs text-[var(--muted)] sm:order-last"
+            role="status"
+            aria-live="polite"
+          >
+            A adicionar o produto — aguarde um instante para não duplicar o item.
+          </p>
+        ) : null}
         {erroAdicionar ? (
           <p className="basis-full text-xs text-amber-800 sm:order-last">{erroAdicionar}</p>
         ) : null}
@@ -253,14 +286,29 @@ export function ListaItens({ listaCodigo, itensIniciais }: Props) {
               <button
                 type="button"
                 aria-pressed={item.ListaItem_concluido}
+                aria-busy={
+                  acaoLista?.id === item.ListaItem_codigo &&
+                  acaoLista.tipo === "toggle"
+                }
+                disabled={listaOcupada}
                 onClick={() => void onToggle(item.ListaItem_codigo, item.ListaItem_concluido)}
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition ${
+                title={
+                  listaOcupada && acaoLista?.id !== item.ListaItem_codigo
+                    ? "Aguarde a operação em curso"
+                    : undefined
+                }
+                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition disabled:cursor-not-allowed disabled:opacity-50 ${
                   item.ListaItem_concluido
                     ? "border-emerald-200 bg-emerald-50 text-emerald-700"
                     : "border-[var(--border-default)] bg-[var(--input-fill)] text-[var(--muted)] hover:border-[var(--accent)]/50"
                 }`}
               >
-                <Check className="h-5 w-5" strokeWidth={2.5} />
+                {acaoLista?.id === item.ListaItem_codigo &&
+                acaoLista.tipo === "toggle" ? (
+                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                ) : (
+                  <Check className="h-5 w-5" strokeWidth={2.5} />
+                )}
               </button>
               <div className="min-w-0 flex-1">
                 <p
@@ -279,8 +327,8 @@ export function ListaItens({ listaCodigo, itensIniciais }: Props) {
               <button
                 type="button"
                 onClick={() => abrirEdicao(item)}
-                disabled={pendente}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[var(--muted)] opacity-70 transition hover:bg-[var(--ghost-hover)] hover:text-[var(--accent)] hover:opacity-100 disabled:opacity-30"
+                disabled={listaOcupada}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[var(--muted)] opacity-70 transition hover:bg-[var(--ghost-hover)] hover:text-[var(--accent)] hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
                 aria-label="Editar item"
               >
                 <Pencil className="h-4 w-4" />
@@ -288,11 +336,20 @@ export function ListaItens({ listaCodigo, itensIniciais }: Props) {
               <button
                 type="button"
                 onClick={() => void onRemove(item.ListaItem_codigo)}
-                disabled={pendente}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[var(--muted)] opacity-70 transition hover:bg-[var(--danger-hover)] hover:text-red-600 hover:opacity-100 disabled:opacity-30"
+                disabled={listaOcupada}
+                aria-busy={
+                  acaoLista?.id === item.ListaItem_codigo &&
+                  acaoLista.tipo === "remove"
+                }
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[var(--muted)] opacity-70 transition hover:bg-[var(--danger-hover)] hover:text-red-600 hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-30"
                 aria-label="Remover item"
               >
-                <Trash2 className="h-4 w-4" />
+                {acaoLista?.id === item.ListaItem_codigo &&
+                acaoLista.tipo === "remove" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <Trash2 className="h-4 w-4" />
+                )}
               </button>
             </li>
           )

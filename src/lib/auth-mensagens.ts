@@ -7,7 +7,7 @@ export function mensagemErroAutenticacao(mensagemOriginal: string): string {
     m.includes("invalid login credentials") ||
     m.includes("invalid credentials")
   ) {
-    return "E-mail ou senha incorretos. Se costuma entrar só com o Google, use «Continuar com Google» ou «Esqueci a senha» para criar uma senha neste e-mail.";
+    return "E-mail ou senha incorretos — ou a conta ainda não foi confirmada por e-mail (abra a mensagem «Confirmar registo»). Depois de confirmar, tente de novo. Quem usa só o Google pode entrar pelo Google ou usar «Esqueci a senha».";
   }
 
   if (m.includes("email not confirmed")) {

@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/client";
 import { mensagemErroAutenticacao } from "@/lib/auth-mensagens";
 import { publicAppOriginFromWindow } from "@/lib/public-origin";
 import {
+  Eye,
+  EyeOff,
   KeyRound,
   Loader2,
   LogIn,
@@ -29,6 +31,7 @@ export function LoginForm() {
   const erroUrl = searchParams.get("erro");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [verSenha, setVerSenha] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "sent">("idle");
   const [mensagem, setMensagem] = useState<string | null>(
     erroUrl === "auth"
@@ -69,7 +72,7 @@ export function LoginForm() {
       setStatus("idle");
       return;
     }
-    // No Android o fluxo pode abrir o Chrome e voltar ao app sem redirect: evita botões presos em "loading".
+    // OAuth pode não redirecionar de imediato: evita o botão preso em «loading».
     window.setTimeout(() => setStatus("idle"), 4000);
   }
 
@@ -123,7 +126,7 @@ export function LoginForm() {
     setStatus("loading");
     const supabase = createClient();
     const origin = publicAppOriginFromWindow();
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: normalizarEmail(email),
       password: senha,
       options: { emailRedirectTo: `${origin}/auth/callback` },
@@ -133,8 +136,13 @@ export function LoginForm() {
       setMensagem(mensagemErroAutenticacao(error.message));
       return;
     }
+    if (data.session) {
+      router.replace("/");
+      router.refresh();
+      return;
+    }
     setMensagem(
-      "Conta criada. Se o projeto exigir confirmação por e-mail, abra a mensagem enviada. Caso contrário, já pode entrar com e-mail e senha."
+      "Conta criada. Abra o e-mail que enviámos e confirme o endereço antes de usar «Entrar» com e-mail e senha. Até confirmar, pode usar «Receber link» com o mesmo e-mail."
     );
   }
 
@@ -195,12 +203,6 @@ export function LoginForm() {
           )}
           Continuar com Google
         </button>
-        <p className="mt-2 text-center text-[11px] leading-snug text-[var(--muted)]">
-          No Android, o login com Google costuma abrir o{" "}
-          <strong className="text-[var(--ink)]">Chrome/navegador</strong> por política de
-          segurança — não é falha do app. Para tudo dentro do app, use{" "}
-          <strong className="text-[var(--ink)]">e-mail e senha</strong> abaixo.
-        </p>
 
         <div className="my-6 flex items-center gap-3">
           <span className="h-px flex-1 bg-[var(--border-default)]" />
@@ -229,16 +231,31 @@ export function LoginForm() {
               <KeyRound className="h-3.5 w-3.5" />
               Senha
             </span>
-            <input
-              type="password"
-              required
-              autoComplete="current-password"
-              value={senha}
-              onChange={(e) => setSenha(e.target.value)}
-              placeholder="••••••••"
-              minLength={6}
-              className="w-full rounded-2xl border border-[var(--border-default)] bg-[var(--input-fill)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--placeholder)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-ring)]"
-            />
+            <div className="relative">
+              <input
+                type={verSenha ? "text" : "password"}
+                required
+                autoComplete="current-password"
+                value={senha}
+                onChange={(e) => setSenha(e.target.value)}
+                placeholder="••••••••"
+                minLength={6}
+                className="w-full rounded-2xl border border-[var(--border-default)] bg-[var(--input-fill)] py-3 pl-4 pr-12 text-sm text-[var(--ink)] outline-none transition placeholder:text-[var(--placeholder)] focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-ring)]"
+              />
+              <button
+                type="button"
+                onClick={() => setVerSenha((v) => !v)}
+                className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-[var(--muted)] transition hover:bg-[var(--ghost-hover)] hover:text-[var(--ink)]"
+                aria-label={verSenha ? "Ocultar senha" : "Mostrar senha"}
+                aria-pressed={verSenha}
+              >
+                {verSenha ? (
+                  <EyeOff className="h-5 w-5" aria-hidden />
+                ) : (
+                  <Eye className="h-5 w-5" aria-hidden />
+                )}
+              </button>
+            </div>
             <span className="mt-1 block text-[11px] text-[var(--muted)]">
               Mínimo 6 caracteres (também para criar conta).
             </span>
@@ -270,7 +287,9 @@ export function LoginForm() {
         <button
           type="button"
           onClick={() => void criarConta()}
-          disabled={status === "loading" || !email.trim()}
+          disabled={
+            status === "loading" || !email.trim() || senha.length < 6
+          }
           className="mb-6 flex w-full items-center justify-center gap-2 rounded-2xl border border-[var(--border-default)] bg-[var(--elevated)] py-3 text-sm font-medium text-[var(--ink)] transition hover:bg-[var(--ghost-hover)] disabled:opacity-50"
         >
           <UserPlus className="h-4 w-4" />
