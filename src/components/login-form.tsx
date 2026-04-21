@@ -142,7 +142,7 @@ export function LoginForm() {
       return;
     }
     setMensagem(
-      "Conta criada. Abra o e-mail que enviámos e confirme o endereço antes de usar «Entrar» com e-mail e senha. Até confirmar, pode usar «Receber link» com o mesmo e-mail."
+      "Conta criada. Abra o e-mail de confirmação (verifique spam e promoções). Se nada chegar em minutos: no Supabase, sem SMTP personalizado, os e-mails de autenticação só são enviados para endereços que fazem parte da equipa da organização do projeto — em Organization → Team adicione o seu e-mail, ou configure Authentication → SMTP Settings (recomendado). Guia: https://supabase.com/docs/guides/auth/auth-smtp — até confirmar, pode usar «Receber link»."
     );
   }
 

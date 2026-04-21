@@ -15,6 +15,13 @@ export function mensagemErroAutenticacao(mensagemOriginal: string): string {
   }
 
   if (
+    m.includes("email address not authorized") ||
+    m.includes("not authorized to receive")
+  ) {
+    return "Este e-mail não pode receber mensagens do servidor de e-mail de teste do Supabase. Soluções: (1) adicionar o e-mail à equipa da organização no painel Supabase, ou (2) configurar SMTP personalizado em Authentication → SMTP Settings — https://supabase.com/docs/guides/auth/auth-smtp";
+  }
+
+  if (
     m.includes("user already registered") ||
     m.includes("already been registered")
   ) {
