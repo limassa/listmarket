@@ -129,7 +129,9 @@ export function LoginForm() {
     const { data, error } = await supabase.auth.signUp({
       email: normalizarEmail(email),
       password: senha,
-      options: { emailRedirectTo: `${origin}/auth/callback` },
+      options: {
+        emailRedirectTo: `${origin}/auth/confirmar-conta`,
+      },
     });
     setStatus("idle");
     if (error) {
